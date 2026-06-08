@@ -101,23 +101,36 @@ def build_features(
 
     return df[cols]
 
+# ============================================================
+#  VONIS DUNIA NYATA (Layer 2 — acuan norma PLN)
+#  kWh per orang per BULAN. Acuan: konsumsi RT Indonesia
+#  ~109-152 kWh/bln/rumah (PLN) untuk 3-4 penghuni.
+#  ANGKA DIDOKUMENTASIKAN & boleh disesuaikan tim.
+# ============================================================
+HEMAT_MAX = 25   # < 25 kWh/orang/bln -> hemat
+BOROS_MIN = 55   # > 55 kWh/orang/bln -> boros (di antaranya -> normal)
+
+def vonis_realistis(kwh_per_orang_tahun: float) -> str:
+    """Status berbasis ambang realistis Indonesia (bukan skala dataset)."""
+    per_bulan = kwh_per_orang_tahun / 12
+    if per_bulan < HEMAT_MAX:
+        return "hemat"
+    if per_bulan > BOROS_MIN:
+        return "boros"
+    return "normal"
+
 
 def run_predict(X_df: pd.DataFrame) -> str | None:
     """
-    Execute pipeline: scaler.transform → model.predict.
+    Vonis status (hemat/normal/boros) untuk input user.
 
-    Returns
-    -------
-    Prediction label string ('hemat' | 'normal' | 'boros')
-    or None if the model is not available.
-
-    Note:
-        X_df.values is used (2D array) to avoid
-        column name mismatch if the model was trained without feature_names_in_.
+    PENTING: status TIDAK lagi memakai model_tree pada kwh_per_orang,
+    karena scaler/model dilatih pada skala dataset (~138 kWh/orang/thn)
+    sedangkan input user nyata jauh lebih besar (~800+), sehingga
+    model akan memvonis hampir semua user 'boros'.
+    Status memakai ambang realistis (norma PLN). Proporsi peralatan
+    (prop_*) tetap dipakai untuk rekomendasi di halaman hasil.
     """
-    scaler, model = load_model()
-    if scaler is None or model is None:
+    if "kwh_per_orang" not in X_df.columns:
         return None
-
-    X_scaled = scaler.transform(X_df.values)
-    return model.predict(X_scaled)[0]
+    return vonis_realistis(float(X_df["kwh_per_orang"].iloc[0]))

@@ -21,7 +21,6 @@ def render() -> None:
     with col_m:
         _render_summary_card()
         _render_appliance_card()
-        _render_model_status()
 
         st.markdown('<div style="height:8px"></div>', unsafe_allow_html=True)
         cb, cn = st.columns(2)
@@ -30,11 +29,7 @@ def render() -> None:
                 go_to(2)
         with cn:
             if st.button("🔍 Analyze My Home", type="primary", key="btn_s3"):
-                if not is_model_ready():
-                    st.error("❌ Model not available. Please upload the .pkl files first.")
-                else:
-                    _run_analysis()
-
+                _run_analysis()
 
 # ── Helper ───────────────────────────────────────────────────
 
@@ -73,25 +68,6 @@ def _render_appliance_card() -> None:
         )
     else:
         st.info("⚠️ No appliances selected.")
-
-
-def _render_model_status() -> None:
-    scaler, _ = load_model()
-    if scaler is None:
-        st.markdown(
-            '<div class="no-model-warn">⚠️ <b>AI Model is not connected.</b><br>'
-            'Place <code>scaler_energi.pkl</code> and <code>model_tree_energi.pkl</code> '
-            'in the same folder as <code>app.py</code>, then restart Streamlit.<br>'
-            '<span style="font-size:.8rem;opacity:.8">'
-            'Use the .pkl files generated from your AI training notebook.</span>'
-            '</div>',
-            unsafe_allow_html=True,
-        )
-    else:
-        st.markdown(
-            '<div class="model-ok">✅ AI model detected and ready!</div>',
-            unsafe_allow_html=True,
-        )
 
 
 def _run_analysis() -> None:

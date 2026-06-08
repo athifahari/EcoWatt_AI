@@ -60,8 +60,6 @@ def render() -> None:
     label = r["label"]
     _, col_m, _ = st.columns([1, 4, 1])
     with col_m:
-        _render_no_model_warn(label)
-        _render_status_card(label)
         _render_metrics(r)
         _render_pie_chart(r)
         _render_recommendations(r)
@@ -70,31 +68,6 @@ def render() -> None:
 
 
 # ── Sub-renders ───────────────────────────────────────────────
-
-def _render_no_model_warn(label) -> None:
-    if label is None:
-        st.markdown(
-            '<div class="no-model-warn" style="margin-bottom:20px">'
-            '⚠️ <b>Prediction unavailable</b> — AI model not connected.<br>'
-            '<span style="font-size:.82rem">Upload <code>scaler_energi.pkl</code> + '
-            '<code>model_tree_energi.pkl</code> to the <code>app.py</code> folder and restart.</span>'
-            '</div>',
-            unsafe_allow_html=True,
-        )
-
-
-def _render_status_card(label) -> None:
-    cfg = _STATUS_CFG.get(label, _STATUS_CFG[None])
-    st.markdown(
-        f'<div class="status-card {cfg["cls"]}">'
-        f'<div class="status-emoji">{cfg["emoji"]}</div>'
-        f'<div class="status-label badge-{cfg["cls"]}">{cfg["badge"]}</div>'
-        f'<h2>Home Efficiency Status</h2>'
-        f'<p>{cfg["msg"]}</p>'
-        f'</div>',
-        unsafe_allow_html=True,
-    )
-
 
 def _render_metrics(r: dict) -> None:
     m1, m2, m3 = st.columns(3)
@@ -184,13 +157,13 @@ def _render_insights(r: dict) -> None:
     if kpo_b < AVG_KWH_ORANG_INDO:
         st.markdown(
             f'<div class="insight">🌱 Consumption per person (<b>{kpo_b:.1f} kWh/month</b>) '
-            f'is lower than average dataset (~{AVG_KWH_ORANG_INDO:.0f} kWh/person). Great!</div>',
+            f'is lower than average rata-rata Indonesia (~{AVG_KWH_ORANG_INDO:.0f} kWh/person). Great!</div>',
             unsafe_allow_html=True,
         )
     else:
         st.markdown(
             f'<div class="insight">⚡ Consumption per person is '
-            f'<b>{kpo_b - AVG_KWH_ORANG_INDO:.1f} kWh/month</b> higher than the average dataset. '
+            f'<b>{kpo_b - AVG_KWH_ORANG_INDO:.1f} kWh/month</b> higher than the average rata-rata Indonesia. '
             f'There is still room to save!</div>',
             unsafe_allow_html=True,
         )

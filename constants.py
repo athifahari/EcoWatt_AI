@@ -62,8 +62,8 @@ RECO_DB: dict[str, tuple] = {
 # PLN electricity price per kWh (Rp)
 TARIF_PLN: float = 1444.70
 
-# Average electricity consumption per person in Indonesia (kWh/month)
-AVG_KWH_ORANG_INDO: float = 100.0
+# Rata-rata realistis Indonesia (kWh/orang/BULAN) — acuan PLN ~150 kWh/rumah ÷ ~3 orang
+AVG_KWH_ORANG_INDO: float = 45.0
 
 # CO2 emission factor (kg per kWh)
 FAKTOR_CO2: float = 0.87

@@ -21,6 +21,8 @@ Susunan anggota kelompok pengembang EcoWatt AI:
 2. **Install Dependensi/Library yang Diperlukan:**
    ```bash
    pip install -r requirements.txt
+   ```
+
 
 ## Pipeline Feature Engineering (sesuai notebook)
 
@@ -44,6 +46,32 @@ Susunan anggota kelompok pengembang EcoWatt AI:
 
 ---
 
+
+## Dataset & Analisis Bias
+
+### Sumber & Sifat Data
+- **Sumber:** Kaggle — *Smart Home Energy Consumption* (`mexwell/smart-home-energy-consumption`).
+- **Ukuran:** 500 rumah, 100.000 baris, periode 1 tahun (2023).
+- **Granularitas:** tiap baris = catatan satu peralatan pada satu waktu (kWh).
+- **Sifat:** dataset **sintetis** — bukan data tagihan PLN asli. Digunakan untuk membuktikan metodologi, bukan sebagai sumber nilai absolut.
+
+### Pra-pemrosesan (Agregasi)
+- Diagregasi ke **1 baris per rumah** (total kWh setahun di-`sum`).
+- `Household Size` diambil dengan **modus** per rumah (nilainya tidak konsisten antar baris pada data asli).
+- Fitur clustering: `kwh_per_orang` + proporsi peralatan (`prop_*`).
+- Label `hemat / normal / boros` dihasilkan via **clustering (K-Means)**, lalu dipakai melatih **Decision Tree** untuk melayani input pengguna baru.
+
+### Laporan Analisis Bias (Bias Analysis Report)
+| Bias / Keterbatasan | Penjelasan | Mitigasi |
+|---|---|---|
+| **Skala data tak realistis** | Konsumsi dataset (~25 kWh/bln) jauh di bawah rumah Indonesia nyata (~200 kWh/bln) karena data hanya sampel. | Klasifikasi berbasis **posisi relatif** & fitur ternormalisasi; ambang untuk data nyata dikalibrasi ke **norma PLN/BPS**. |
+| **Household Size tidak konsisten** | Jumlah penghuni berubah antar baris pada seluruh rumah (ciri data sintetis). | Diambil **modus** per rumah. |
+| **Bias ukuran rumah** | kWh total mentah membuat rumah besar tampak boros. | Normalisasi **per penghuni** (`kwh_per_orang`). |
+| **Nilai Rupiah ilustratif** | Estimasi memakai tarif acuan (R-1/1.300 VA), bukan tagihan asli. | Disebut terbuka sebagai estimasi; tidak dipakai untuk klasifikasi. |
+| **Asumsi daya (watt)** | Estimasi kWh per alat memakai watt asumsi dari `constants.py`. | Tabel watt didokumentasikan & dapat disesuaikan. |
+
+> **Catatan etis:** hasil bersifat *decision-support*, bukan kesimpulan mutlak. Untuk penerapan nyata, model perlu dikalibrasi dengan data konsumsi rumah tangga Indonesia.
+
 ## Struktur Proyek
 
 ```
@@ -59,6 +87,9 @@ ecowatt_ai/
 │   ├── step3_confirm.py    ← konfirmasi + loading + trigger prediksi
 │   └── step4_result.py     ← status card, pie chart, rekomendasi
 ├── scaler_energi.pkl       ← taruh di sini
-└── model_tree_energi.pkl   ← taruh di sini
+├── model_tree_energi.pkl   ← taruh di sini
+├── data/
+│   ├── AI_Energi.ipynb     ← file colab untuk data
+│   └── dataset_energi.csv  ← dataset yang digunakan model
 ```
 
