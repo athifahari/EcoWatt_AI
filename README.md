@@ -9,9 +9,9 @@ Proyek ini dikembangkan untuk memenuhi tugas mata kuliah **Artificial Intelligen
 
 ## Tim Pengembang (Kelompok)
 Susunan anggota kelompok pengembang EcoWatt AI:
-1. **[Athifah Ari Ghumaisha]** — NPM: `[140810240004]`
-2. **[Vivian Azarine Widyatna]** — NPM: `[140810240014]`
-3. **[Azhaar Fathin Tsuraya]** — NPM: `[140810240036]`
+1. **Athifah Ari Ghumaisha** - NPM: `140810240004`
+2. **Vivian Azarine Widyatna** - NPM: `140810240014`
+3. **Azhaar Fathin Tsuraya** - NPM: `140810240036`
 
 ---
 
@@ -27,11 +27,11 @@ Susunan anggota kelompok pengembang EcoWatt AI:
 | Langkah | Keterangan |
 |---|---|
 | Input user | kWh/bulan + jam pemakaian per alat |
-| kWh tahunan | `kwh_bulan × 12` → sama dengan basis dataset |
+| kWh perbulan | `kwh_bulan` |
 | Estimasi kWh alat | `Watt × jam/hari × 365 / 1000` per alat |
 | Proporsi | `kWh_alat / total_kWh_semua_alat` → `prop_*` |
-| kwh_per_orang | `kwh_tahun / n_penghuni` (TAHUNAN, bukan bulanan!) |
-| Normalisasi | `StandardScaler.transform()` — **wajib sebelum predict** |
+| kwh_per_orang | `kwh_tahun / n_penghuni` |
+| Normalisasi | `StandardScaler.transform()` |
 | Prediksi | `model_tree.predict(X_scaled)` |
 
 
@@ -48,12 +48,17 @@ Susunan anggota kelompok pengembang EcoWatt AI:
 
 ```
 ecowatt_ai/
-│
-├── app.py                    # File kode utama aplikasi Streamlit
-├── requirements.txt          # Daftar library dependency Python
-├── scaler_energi.pkl         # Serialisasi StandardScaler (dari Notebook)
-├── model_tree_energi.pkl     # Serialisasi Decision Tree (dari Notebook)
-├── kmeans_energi.pkl         # Serialisasi KMeans (dari Notebook)
-└── README.md                 # Dokumentasi proyek aplikasi
+├── app.py                  ← entry point, cukup 48 baris
+├── constants.py            ← WATT, APPLIANCES, FITUR_ML, RECO_DB, tarif
+├── model.py                ← load_model(), build_features(), run_predict()
+├── state.py                ← init_state(), reset_state(), go_to()
+├── ui_components.py        ← CSS global, hero, step nav, footer
+├── pages/
+│   ├── step1_info.py       ← form jumlah penghuni & kWh
+│   ├── step2_appliances.py ← checkbox + slider per alat
+│   ├── step3_confirm.py    ← konfirmasi + loading + trigger prediksi
+│   └── step4_result.py     ← status card, pie chart, rekomendasi
+├── scaler_energi.pkl       ← taruh di sini
+└── model_tree_energi.pkl   ← taruh di sini
 ```
 
