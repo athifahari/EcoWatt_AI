@@ -60,6 +60,7 @@ def render() -> None:
     label = r["label"]
     _, col_m, _ = st.columns([1, 4, 1])
     with col_m:
+        _render_status_card(label) 
         _render_metrics(r)
         _render_pie_chart(r)
         _render_recommendations(r)
@@ -68,6 +69,17 @@ def render() -> None:
 
 
 # ── Sub-renders ───────────────────────────────────────────────
+def _render_status_card(label) -> None:
+    cfg = _STATUS_CFG.get(label, _STATUS_CFG[None])
+    st.markdown(
+        f'<div class="status-card {cfg["cls"]}">'
+        f'<div class="status-emoji">{cfg["emoji"]}</div>'
+        f'<div class="status-label badge-{cfg["cls"]}">{cfg["badge"]}</div>'
+        f'<h2>Home Efficiency Status</h2>'
+        f'<p>{cfg["msg"]}</p>'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
 
 def _render_metrics(r: dict) -> None:
     m1, m2, m3 = st.columns(3)
@@ -154,19 +166,18 @@ def _render_insights(r: dict) -> None:
         unsafe_allow_html=True,
     )
     kpo_b = r["kwh_per_orang_bulan"]
-    if kpo_b < AVG_KWH_ORANG_INDO:
-        st.markdown(
-            f'<div class="insight">🌱 Consumption per person (<b>{kpo_b:.1f} kWh/month</b>) '
-            f'is lower than average rata-rata Indonesia (~{AVG_KWH_ORANG_INDO:.0f} kWh/person). Great!</div>',
-            unsafe_allow_html=True,
-        )
+    label = r["label"]
+    if label == "hemat":
+        msg = (f'🌱 Consumption per person (<b>{kpo_b:.1f} kWh/month</b>) is below the '
+               f'Indonesian average (~{AVG_KWH_ORANG_INDO:.0f}). Excellent — keep it up!')
+    elif label == "boros":
+        msg = (f'🔴 Consumption per person (<b>{kpo_b:.1f} kWh/month</b>) is well above the '
+               f'Indonesian average (~{AVG_KWH_ORANG_INDO:.0f}). Big saving potential!')
     else:
-        st.markdown(
-            f'<div class="insight">⚡ Consumption per person is '
-            f'<b>{kpo_b - AVG_KWH_ORANG_INDO:.1f} kWh/month</b> higher than the average rata-rata Indonesia. '
-            f'There is still room to save!</div>',
-            unsafe_allow_html=True,
-        )
+        msg = (f'⚡ Consumption per person (<b>{kpo_b:.1f} kWh/month</b>) is around the '
+               f'Indonesian average (~{AVG_KWH_ORANG_INDO:.0f}). A few tweaks can still help.')
+    st.markdown(f'<div class="insight">{msg}</div>', unsafe_allow_html=True)
+
     co2 = r["kwh_bulan"] * FAKTOR_CO2
     st.markdown(
         f'<div class="insight">🌍 This month ~<b>{co2:.0f} kg CO₂</b> was generated. '
