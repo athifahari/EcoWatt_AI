@@ -188,7 +188,7 @@ def render_footer() -> None:
         '<div class="ft-logo">🌱 EcoWatt AI</div>'
         '<div class="ft-sub">Artificial Intelligence Course Project<br>'
         '<strong>Universitas Padjadjaran</strong></div>'
-        '<a class="gh" href="https://github.com/" target="_blank">⭐ View on GitHub</a>'
+        '<a class="gh" href="https://github.com/athifahari/EcoWatt_AI" target="_blank">⭐ View on GitHub</a>'
         '<div style="margin-top:18px;font-size:.78rem;opacity:.5">'
         'Made with ❤️ © 2026 EcoWatt AI</div>'
         '</div>',

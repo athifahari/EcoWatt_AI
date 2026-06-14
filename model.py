@@ -7,11 +7,10 @@ import os
 import pandas as pd
 import streamlit as st
 
-from constants import APPLIANCES, WATT, FITUR_ML
+from constants import APPLIANCES, WATT, FITUR_ML, SKALA_MODEL
 
 
 # ── .pkl file names ───────────────────────────────────────────
-#  Change here if the file names differ
 SCALER_PATH = "scaler_energi.pkl"
 MODEL_PATH  = "model_tree_energi.pkl"
 
@@ -22,11 +21,6 @@ def load_model() -> tuple:
     Load scaler and model from .pkl files.
     Returns (scaler, model) if files are found,
     or (None, None) if they are not yet available.
-
-    Integration guide:
-        Place scaler_energi.pkl and model_tree_energi.pkl
-        in the same folder as app.py, then restart Streamlit.
-        The model will be automatically detected.
     """
     if os.path.exists(SCALER_PATH) and os.path.exists(MODEL_PATH):
         import joblib
@@ -49,23 +43,17 @@ def build_features(
     avg_temp:    float = 27.0,
 ) -> pd.DataFrame:
     """
-    Build a 1-row feature DataFrame according to the dataset schema:
+    Build a 1-row feature DataFrame according to the dataset schema.
 
-        total_kwh_tahun  = kwh_bulan × 12
-        kwh_<appliance>  = Watt × hours/day × 365 / 1000   (annual)
-        prop_<appliance> = kwh_<appliance> / Σ kwh_all_appliances
-        kwh_per_orang    = total_kwh_tahun / household_size
-
-    Column order follows FITUR_ML (or feature_names_in_ from scaler).
-
-    Parameters
-    ----------
-    kwh_bulan   : electricity consumption this month (kWh)
-    n_penghuni  : number of family members
-    usage_hours : dict {appliance_id: hours_of_use_per_day}
-    avg_temp    : average ambient temperature (°C), default 27.0
+        kwh_bulan_model  = kwh_bulan ÷ SKALA_MODEL  (sesuaikan ke skala dataset training)
+        total_kwh_tahun  = kwh_bulan_model × 12     (dipakai untuk fitur model)
+        kwh_<appliance>  = Watt × hours/day × 365 / 1000   (annual, skala asli — untuk tampilan/rekomendasi)
+        prop_<appliance> = kwh_<appliance> / Σ kwh_all_appliances  (rasio, tidak terpengaruh skala)
+        kwh_per_orang    = total_kwh_tahun / household_size  (fitur model, skala dataset)
     """
-    kwh_tahun = kwh_bulan * 12
+    # Rescale input user (skala realistis Indonesia) ke skala dataset training
+    kwh_bulan_model = kwh_bulan / SKALA_MODEL
+    kwh_tahun = kwh_bulan_model * 12
 
     # Annual kWh per appliance
     kwh_alat: dict[str, float] = {
@@ -94,43 +82,104 @@ def build_features(
     # Prioritize column order from scaler (most accurate)
     scaler, _ = load_model()
     if scaler is not None and hasattr(scaler, "feature_names_in_"):
-        cols = list(scaler.feature_names_in_)
+        scaler_cols = list(scaler.feature_names_in_)
+        # FIX: scaler mungkin dilatih tanpa kwh_per_orang.
+        # Pastikan kolom ini tetap ada di df yang dikembalikan
+        # agar vonis_realistis() bisa membacanya.
+        cols = scaler_cols
+        if "kwh_per_orang" not in cols:
+            cols = cols + ["kwh_per_orang"]
     else:
-        # Fallback: order from FITUR_ML (only columns present in df)
+        # Fallback: gunakan FITUR_ML, filter hanya yang ada di df
         cols = [c for c in FITUR_ML if c in df.columns]
+
+    # Isi kolom yang tidak ada di df dengan 0 (bukan error)
+    for c in cols:
+        if c not in df.columns:
+            df[c] = 0.0
 
     return df[cols]
 
+
 # ============================================================
-#  VONIS DUNIA NYATA (Layer 2 — acuan norma PLN)
-#  kWh per orang per BULAN. Acuan: konsumsi RT Indonesia
-#  ~109-152 kWh/bln/rumah (PLN) untuk 3-4 penghuni.
-#  ANGKA DIDOKUMENTASIKAN & boleh disesuaikan tim.
+#  THRESHOLD BERBASIS DATASET (tertile / pembagian 3 kelompok)
+#
+#  Dihitung dari distribusi kolom `kwh_per_orang` (skala TAHUNAN,
+#  sama seperti di dataset_energi.csv) menggunakan persentil 33%
+#  dan 67%, sehingga jumlah baris hemat/normal/boros relatif seimbang.
+#
+#  Kategori (kwh_per_orang per TAHUN):
+#    HEMAT  : < 77   (≈ persentil bawah 33%)
+#    NORMAL : 77 – 146
+#    BOROS  : > 146  (≈ persentil atas 33%)
+#
+#  Jika dataset diganti, hitung ulang dengan:
+#    df['kwh_per_orang'].quantile(1/3) dan quantile(2/3)
 # ============================================================
-HEMAT_MAX = 25   # < 25 kWh/orang/bln -> hemat
-BOROS_MIN = 55   # > 55 kWh/orang/bln -> boros (di antaranya -> normal)
+HEMAT_MAX = 77    # kwh_per_orang/tahun < 77   → hemat
+BOROS_MIN = 146   # kwh_per_orang/tahun > 146  → boros
+
 
 def vonis_realistis(kwh_per_orang_tahun: float) -> str:
-    """Status berbasis ambang realistis Indonesia (bukan skala dataset)."""
-    per_bulan = kwh_per_orang_tahun / 12
-    if per_bulan < HEMAT_MAX:
+    """Status berbasis distribusi dataset (tertile), skala TAHUNAN."""
+    if kwh_per_orang_tahun < HEMAT_MAX:
         return "hemat"
-    if per_bulan > BOROS_MIN:
+    if kwh_per_orang_tahun > BOROS_MIN:
         return "boros"
     return "normal"
 
 
-def run_predict(X_df: pd.DataFrame) -> str | None:
+def run_predict(X_df: pd.DataFrame) -> str:
     """
     Vonis status (hemat/normal/boros) untuk input user.
 
-    PENTING: status TIDAK lagi memakai model_tree pada kwh_per_orang,
-    karena scaler/model dilatih pada skala dataset (~138 kWh/orang/thn)
-    sedangkan input user nyata jauh lebih besar (~800+), sehingga
-    model akan memvonis hampir semua user 'boros'.
-    Status memakai ambang realistis (norma PLN). Proporsi peralatan
-    (prop_*) tetap dipakai untuk rekomendasi di halaman hasil.
+    Prioritas:
+      1. Jika model_tree_energi.pkl tersedia, gunakan
+         model_tree.predict() langsung pada fitur SKALA ASLI
+         (fitur_ml = 11 kolom: kwh_per_orang + 10 prop_<alat>).
+
+         PENTING: scaler_energi.pkl TIDAK dipakai di sini.
+         Berdasarkan notebook training, StandardScaler hanya
+         dipakai untuk input KMeans (clustering label), sedangkan
+         DecisionTreeClassifier di-fit langsung pada
+         df_rumah[fitur_ml] (skala asli/tidak di-scale). Decision
+         tree juga tidak butuh feature scaling secara prinsip.
+         Memanggil scaler.transform() di sini membuat semua
+         threshold tree (misal kwh_per_orang <= 172.79) menjadi
+         tidak pernah tercapai -> prediksi selalu jatuh ke kelas
+         yang sama.
+
+      2. Jika model tidak tersedia / error, fallback ke threshold
+         berbasis tertile dataset (vonis_realistis).
+
+    Proporsi peralatan (prop_*) tetap tersimpan di session_state
+    untuk rekomendasi di halaman hasil.
     """
+    _, model = load_model()
+
+    if model is not None and hasattr(model, "feature_names_in_"):
+        model_cols = list(model.feature_names_in_)
+        for c in model_cols:
+            if c not in X_df.columns:
+                X_df[c] = 0.0
+
+        X_model = X_df[model_cols]
+
+        try:
+            pred = model.predict(X_model)
+            return str(pred[0])
+        except Exception:
+            # Jika terjadi error tak terduga saat predict, fallback ke rule-based
+            pass
+
+    # Fallback rule-based (threshold tertile dataset)
     if "kwh_per_orang" not in X_df.columns:
-        return None
+        if "total_kwh_tahun" in X_df.columns and "household_size" in X_df.columns:
+            kwh_per_orang = (
+                float(X_df["total_kwh_tahun"].iloc[0])
+                / float(X_df["household_size"].iloc[0])
+            )
+            return vonis_realistis(kwh_per_orang)
+        return "normal"  # default jika data tidak cukup
+
     return vonis_realistis(float(X_df["kwh_per_orang"].iloc[0]))

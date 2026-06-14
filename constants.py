@@ -67,3 +67,26 @@ AVG_KWH_ORANG_INDO: float = 45.0
 
 # CO2 emission factor (kg per kWh)
 FAKTOR_CO2: float = 0.87
+
+# ============================================================
+#  FAKTOR SKALA MODEL
+#
+#  Dataset training (dataset_energi.csv) berasal dari sumber luar
+#  negeri dengan skala konsumsi yang JAUH lebih kecil dari rumah
+#  tangga Indonesia:
+#     - total_kwh_tahun (dataset) rata-rata ≈ 300 kWh/tahun
+#       => setara ≈ 25 kWh/bulan per rumah
+#     - Rata-rata rumah tangga Indonesia ≈ 150 kWh/bulan (acuan PLN)
+#
+#  SKALA_MODEL = rata-rata kWh/bulan Indonesia / rata-rata kWh/bulan dataset
+#              = 150 / 25 = 6
+#
+#  build_features() membagi kwh_bulan user dengan SKALA_MODEL
+#  sebelum dihitung menjadi total_kwh_tahun & kwh_per_orang yang
+#  dikirim ke model_tree_energi.pkl, supaya input realistis user
+#  dipetakan ke rentang nilai yang dikenali model (hasil training).
+#
+#  Jika dataset training diganti, hitung ulang:
+#    SKALA_MODEL = (rata2 kwh_bulan target/lokal) / (rata2 total_kwh_tahun_dataset / 12)
+# ============================================================
+SKALA_MODEL: float = 6.0
