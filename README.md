@@ -76,20 +76,20 @@ Susunan anggota kelompok pengembang EcoWatt AI:
 
 ```
 ecowatt_ai/
-├── app.py                  ← entry point, cukup 48 baris
+├── app.py                  ← entry point web app
 ├── constants.py            ← WATT, APPLIANCES, FITUR_ML, RECO_DB, tarif
 ├── model.py                ← load_model(), build_features(), run_predict()
 ├── state.py                ← init_state(), reset_state(), go_to()
 ├── ui_components.py        ← CSS global, hero, step nav, footer
 ├── pages/
 │   ├── step1_info.py       ← form jumlah penghuni & kWh
-│   ├── step2_appliances.py ← checkbox + slider per alat
+│   ├── step2_appliances.py ← checkbox + slider pemakaian jam per alat
 │   ├── step3_confirm.py    ← konfirmasi + loading + trigger prediksi
 │   └── step4_result.py     ← status card, pie chart, rekomendasi
-├── scaler_energi.pkl       ← taruh di sini
-├── model_tree_energi.pkl   ← taruh di sini
+├── scaler_energi.pkl       
+├── model_tree_energi.pkl   
 ├── data/
-│   ├── AI_Energi.ipynb     ← file colab untuk data
+│   ├── AI_Energi.ipynb     ← file colab untuk data mining & training awal
 │   └── dataset_energi.csv  ← dataset yang digunakan model
 ```
 
