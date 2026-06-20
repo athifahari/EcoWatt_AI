@@ -3,12 +3,11 @@
 #  Step 3 — Confirm data + run analysis
 # ============================================================
 
-from cProfile import label
 import time
 import streamlit as st
 
 from constants import APPLIANCES, WATT, TARIF_PLN
-from model import build_features, run_predict, is_model_ready, load_model
+from model import build_features, run_predict
 from ui_components import render_steps, section_header
 from state import go_to
 
@@ -32,7 +31,8 @@ def render() -> None:
             if st.button("🔍 Analyze My Home", type="primary", key="btn_s3"):
                 _run_analysis()
 
-# ── Helper ───────────────────────────────────────────────────
+
+# ── Helpers ───────────────────────────────────────────────────
 
 def _render_summary_card() -> None:
     est_tag = st.session_state.kwh_bulan * TARIF_PLN
@@ -40,7 +40,7 @@ def _render_summary_card() -> None:
         '<div class="card"><strong>🏠 Household Information</strong>'
         f'<div class="confirm-row"><span class="key">👥 Residents</span>'
         f'<span class="val">{st.session_state.n_penghuni} people</span></div>'
-        f'<div class="confirm-row"><span class="key">⚡ Last Month Usage</span>'
+        f'<div class="confirm-row"><span class="key">⚡ This Month\'s Usage</span>'
         f'<span class="val">{st.session_state.kwh_bulan} kWh</span></div>'
         f'<div class="confirm-row"><span class="key">💰 Estimated Bill</span>'
         f'<span class="val">Rp {est_tag:,.0f}</span></div>'
@@ -59,7 +59,7 @@ def _render_appliance_card() -> None:
         rows = "".join(
             f'<div class="confirm-row">'
             f'<span class="key">{ap["emoji"]} {ap["label"]}</span>'
-            f'<span class="val">{jam} hrs/day · ≈{(WATT[ap["id"]]*jam*30)/1000:.1f} kWh/mo</span>'
+            f'<span class="val">{jam} hrs/day · ≈{(WATT[ap["id"]] * jam * 30) / 1000:.1f} kWh/mo</span>'
             f'</div>'
             for ap, jam in aktif
         )
@@ -105,7 +105,7 @@ def _run_analysis() -> None:
     )
     label = run_predict(X_df)
 
-    # Calculate supporting data for results page
+    # Compute supporting data for the results page
     kwh_tahun   = st.session_state.kwh_bulan * 12
     est_tahunan = {
         ap["id"]: (WATT[ap["id"]] * st.session_state.usage_hours.get(ap["id"], 0) * 365) / 1000
@@ -115,12 +115,12 @@ def _run_analysis() -> None:
     props     = {k: v / total_est if total_est > 0 else 0.0 for k, v in est_tahunan.items()}
 
     st.session_state.result = {
-        "label":              label,
-        "kwh_bulan":          st.session_state.kwh_bulan,
-        "kwh_tahun":          kwh_tahun,
-        "n_penghuni":         st.session_state.n_penghuni,
-        "kwh_per_orang_bulan":(kwh_tahun / st.session_state.n_penghuni) / 12,
-        "est_bulan":          {k: v / 12 for k, v in est_tahunan.items()},
-        "props":              props,
+        "label":               label,
+        "kwh_bulan":           st.session_state.kwh_bulan,
+        "kwh_tahun":           kwh_tahun,
+        "n_penghuni":          st.session_state.n_penghuni,
+        "kwh_per_orang_bulan": kwh_tahun / st.session_state.n_penghuni / 12,
+        "est_bulan":           {k: v / 12 for k, v in est_tahunan.items()},
+        "props":               props,
     }
     go_to(4)
