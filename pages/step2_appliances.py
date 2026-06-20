@@ -31,7 +31,7 @@ def render() -> None:
             st.markdown(f'<div class="{card_cls}">', unsafe_allow_html=True)
 
             chk = st.checkbox(
-                f"{ap['emoji']} **{ap['label']}** ·  `{ap['watt_desc']}`",
+                f"{ap['emoji']} **{ap['label']}** · `{ap['watt_desc']}`",
                 value=is_on, key=f"chk_{aid}",
             )
             st.session_state.checked[aid] = chk
@@ -41,7 +41,7 @@ def render() -> None:
                 h = st.slider(
                     "⏱ Usage hours per day",
                     min_value=0, max_value=24,
-                    value=cur_h, key=f"sl_{aid}", format="%d hours",
+                    value=cur_h, key=f"sl_{aid}", format="%d hrs",
                 )
                 st.session_state.usage_hours[aid] = h
                 est_kwh_bulan = (WATT[aid] * h * 30) / 1000
