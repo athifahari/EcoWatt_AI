@@ -116,9 +116,8 @@ def build_features(
 #  Jika dataset diganti, hitung ulang dengan:
 #    df['kwh_per_orang'].quantile(1/3) dan quantile(2/3)
 # ============================================================
-HEMAT_MAX = 77    # kwh_per_orang/tahun < 77   → hemat
-BOROS_MIN = 146   # kwh_per_orang/tahun > 146  → boros
-
+HEMAT_MAX = 40 * 12   # = 480  → < 480/tahun (≈ <40/bln) → hemat
+BOROS_MIN = 60 * 12   # = 720  → > 720/tahun (≈ >60/bln) → boros
 
 def vonis_realistis(kwh_per_orang_tahun: float) -> str:
     """Status berbasis distribusi dataset (tertile), skala TAHUNAN."""
@@ -128,58 +127,16 @@ def vonis_realistis(kwh_per_orang_tahun: float) -> str:
         return "boros"
     return "normal"
 
-
 def run_predict(X_df: pd.DataFrame) -> str:
     """
-    Vonis status (hemat/normal/boros) untuk input user.
-
-    Prioritas:
-      1. Jika model_tree_energi.pkl tersedia, gunakan
-         model_tree.predict() langsung pada fitur SKALA ASLI
-         (fitur_ml = 11 kolom: kwh_per_orang + 10 prop_<alat>).
-
-         PENTING: scaler_energi.pkl TIDAK dipakai di sini.
-         Berdasarkan notebook training, StandardScaler hanya
-         dipakai untuk input KMeans (clustering label), sedangkan
-         DecisionTreeClassifier di-fit langsung pada
-         df_rumah[fitur_ml] (skala asli/tidak di-scale). Decision
-         tree juga tidak butuh feature scaling secara prinsip.
-         Memanggil scaler.transform() di sini membuat semua
-         threshold tree (misal kwh_per_orang <= 172.79) menjadi
-         tidak pernah tercapai -> prediksi selalu jatuh ke kelas
-         yang sama.
-
-      2. Jika model tidak tersedia / error, fallback ke threshold
-         berbasis tertile dataset (vonis_realistis).
-
-    Proporsi peralatan (prop_*) tetap tersimpan di session_state
-    untuk rekomendasi di halaman hasil.
+    Vonis status memakai ambang realistis (norma PLN), berbasis kwh_per_orang.
+    Decision Tree & K-Means tetap dilatih di notebook sebagai fondasi metodologi
+    (pelabelan + analisis pola), tetapi TIDAK dipakai untuk vonis akhir karena
+    skala dataset (sintetis, kecil) tidak mewakili konsumsi Indonesia.
     """
-    _, model = load_model()
-
-    if model is not None and hasattr(model, "feature_names_in_"):
-        model_cols = list(model.feature_names_in_)
-        for c in model_cols:
-            if c not in X_df.columns:
-                X_df[c] = 0.0
-
-        X_model = X_df[model_cols]
-
-        try:
-            pred = model.predict(X_model)
-            return str(pred[0])
-        except Exception:
-            # Jika terjadi error tak terduga saat predict, fallback ke rule-based
-            pass
-
-    # Fallback rule-based (threshold tertile dataset)
-    if "kwh_per_orang" not in X_df.columns:
-        if "total_kwh_tahun" in X_df.columns and "household_size" in X_df.columns:
-            kwh_per_orang = (
-                float(X_df["total_kwh_tahun"].iloc[0])
-                / float(X_df["household_size"].iloc[0])
-            )
-            return vonis_realistis(kwh_per_orang)
-        return "normal"  # default jika data tidak cukup
-
-    return vonis_realistis(float(X_df["kwh_per_orang"].iloc[0]))
+    if "kwh_per_orang" in X_df.columns:
+        return vonis_realistis(float(X_df["kwh_per_orang"].iloc[0]))
+    if "total_kwh_tahun" in X_df.columns and "household_size" in X_df.columns:
+        kpo = float(X_df["total_kwh_tahun"].iloc[0]) / float(X_df["household_size"].iloc[0])
+        return vonis_realistis(kpo)
+    return "normal"

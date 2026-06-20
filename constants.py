@@ -47,13 +47,13 @@ FITUR_ML: list[str] = [
 
 # (emoji, title, HTML recommendation text)
 RECO_DB: dict[str, tuple] = {
-    "Air_Conditioning": ("❄️",  "Optimize AC temperature",       "Set to <b>24–26°C</b> — each 1°C increase saves ~6% energy. Use <i>sleep</i> mode at night."),
+    "Air_Conditioning": ("❄️",  "Optimize AC temperature",       "Set to <b>24-26°C</b> — each 1°C increase saves ~6% energy. Use <i>sleep</i> mode at night."),
     "Heater":           ("🔥",  "Save on water heating",         "Consider <b>solar water heaters</b> or shower without heating during the day."),
     "Oven":             ("🍞",  "Cook smarter with oven",        "<b>Cook multiple items at once</b> and use residual heat after turning it off."),
     "Dishwasher":       ("🍽️", "Optimize dishwasher usage",    "Run only when <b>full</b> and choose energy-saving modes."),
     "Washing_Machine":  ("🧺",  "Wash smarter",                  "Wash with <b>cold water</b> — saves up to 90% energy per cycle."),
-    "Fridge":           ("🧊",  "Maintain fridge efficiency",    "Set temp to <b>3–5°C</b>. Keep doors tightly closed, do not insert hot food."),
-    "Computer":         ("💻",  "Save computer energy",          "Enable <b>auto-sleep</b> after 10–15 mins of inactivity and use power-saving modes."),
+    "Fridge":           ("🧊",  "Maintain fridge efficiency",    "Set temp to <b>3-5°C</b>. Keep doors tightly closed, do not insert hot food."),
+    "Computer":         ("💻",  "Save computer energy",          "Enable <b>auto-sleep</b> after 10-15 mins of inactivity and use power-saving modes."),
     "TV":               ("📺",  "Watch TV efficiently",          "Turn TV <b>completely off</b> (not standby). Standby mode still consumes electricity!"),
     "Lights":           ("💡",  "Maximize natural light",        "Switch to <b>LEDs</b> and use natural sunlight. Turn off lights in empty rooms."),
     "Microwave":        ("🍲",  "Microwave > stove",             "Microwaves are more <b>energy efficient</b> than stoves for heating small portions."),
@@ -68,25 +68,4 @@ AVG_KWH_ORANG_INDO: float = 45.0
 # CO2 emission factor (kg per kWh)
 FAKTOR_CO2: float = 0.87
 
-# ============================================================
-#  FAKTOR SKALA MODEL
-#
-#  Dataset training (dataset_energi.csv) berasal dari sumber luar
-#  negeri dengan skala konsumsi yang JAUH lebih kecil dari rumah
-#  tangga Indonesia:
-#     - total_kwh_tahun (dataset) rata-rata ≈ 300 kWh/tahun
-#       => setara ≈ 25 kWh/bulan per rumah
-#     - Rata-rata rumah tangga Indonesia ≈ 150 kWh/bulan (acuan PLN)
-#
-#  SKALA_MODEL = rata-rata kWh/bulan Indonesia / rata-rata kWh/bulan dataset
-#              = 150 / 25 = 6
-#
-#  build_features() membagi kwh_bulan user dengan SKALA_MODEL
-#  sebelum dihitung menjadi total_kwh_tahun & kwh_per_orang yang
-#  dikirim ke model_tree_energi.pkl, supaya input realistis user
-#  dipetakan ke rentang nilai yang dikenali model (hasil training).
-#
-#  Jika dataset training diganti, hitung ulang:
-#    SKALA_MODEL = (rata2 kwh_bulan target/lokal) / (rata2 total_kwh_tahun_dataset / 12)
-# ============================================================
-SKALA_MODEL: float = 6.0
+SKALA_MODEL: float = 1.0
