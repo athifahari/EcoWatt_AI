@@ -65,7 +65,7 @@ TARIF_PLN: float = 1444.70
 # Rata-rata realistis Indonesia (kWh/orang/BULAN) — acuan PLN ~150 kWh/rumah ÷ ~3 orang
 AVG_KWH_ORANG_INDO: float = 45.0
 
-# CO2 emission factor (kg per kWh)
+# CO2 emission factor (kg per kWh) - hanya untuk menghitung emisi karbonnya saja (tidak berpengaruh terhadap model)
 FAKTOR_CO2: float = 0.87
 
 SKALA_MODEL: float = 1.0

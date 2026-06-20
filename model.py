@@ -116,8 +116,8 @@ def build_features(
 #  Jika dataset diganti, hitung ulang dengan:
 #    df['kwh_per_orang'].quantile(1/3) dan quantile(2/3)
 # ============================================================
-HEMAT_MAX = 40 * 12   # = 480  → < 480/tahun (≈ <40/bln) → hemat
-BOROS_MIN = 60 * 12   # = 720  → > 720/tahun (≈ >60/bln) → boros
+HEMAT_MAX = 40 * 12   # = 480  → < 480/tahun (≈ <40/bln) → hemat - data pln
+BOROS_MIN = 60 * 12   # = 720  → > 720/tahun (≈ >60/bln) → boros - data pln
 
 def vonis_realistis(kwh_per_orang_tahun: float) -> str:
     """Status berbasis distribusi dataset (tertile), skala TAHUNAN."""
